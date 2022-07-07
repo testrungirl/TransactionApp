@@ -1,0 +1,201 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+<style>
+    .close:not(:disabled):not(.disabled) {
+        cursor: pointer;
+    }
+
+    .alert-dismissible .close {
+        position: absolute;
+        top: 0;
+        right: 0;
+        padding: 0.75rem 1.25rem;
+        color: inherit;
+    }
+
+    button.close {
+        padding: 0;
+        background-color: transparent;
+        border: 0;
+        -webkit-appearance: none;
+    }
+
+    .close {
+        float: right;
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #000;
+        text-shadow: 0 1px 0 #fff;
+        opacity: .5;
+    }
+</style>
+
+<div class="text-center">
+    @*<h1 class="display-4">Welcome</h1>*@
+    @*<p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>*@
+
+    <div class="container">
+        <div class="card">
+            <div class="row">
+
+                <div class="col-6">
+                    <div class="card-body">
+                        <h5 class="card-title">Transaction Charge</h5>
+                        <div id="firstTask"></div>
+                        <form>
+                            <div class="form-group row">
+                                <label for="document" class="col-sm-4 col-form-label">Configuration File</label>
+                                <div class="col-sm-6">
+                                    <input type="file" class="form-control-file" id="document" accept=".json">
+                                </div>
+                            </div>
+                            <br />
+                            <div class="form-group row">
+                                <label for="amount" class="col-sm-4 col-form-label">Amount</label>
+                                <div class="col-sm-6">
+                                    <input type="number" class="form-control" id="amount" min="0" step=".0001" oninput="validity.valid||(value='');">
+
+                                </div>
+                            </div>
+                            <button class="btn btn-primary mt-5" id="submit">Submit</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card-body">
+                        <h5 class="card-title">Transaction SurCharge</h5>                        
+                        <form>
+                            <div class="form-group row">
+                                <label for="document2" class="col-sm-4 col-form-label">Configuration File</label>
+                                <div class="col-sm-6">
+                                    <input type="file" class="form-control-file" id="document2" accept=".json">
+                                </div>
+                            </div>
+                            <br />
+                            <div class="form-group row">
+                                <label for="amount2" class="col-sm-4 col-form-label">Amount</label>
+                                <div class="col-sm-6">
+                                    <input type="number" class="form-control" id="amount2" min="0" step=".0001" oninput="validity.valid||(value='');">
+
+                                </div>
+                            </div>
+                            <button class="btn btn-primary mt-5" id="submit2">Submit</button>
+                        </form>
+
+                        <div id="secondTask"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $("#submit").click(function(event) {
+                event.preventDefault();
+
+                var uploadDoc = {
+                    amount: $("#amount").val(),
+                    document: $('#document')[0].files[0],
+                };
+                let fdata = new FormData();
+                fdata.append("Document", uploadDoc.document);
+                fdata.append("Amount", uploadDoc.amount);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Home/TransactionCharge",
+                    data: fdata,
+                    contentType: false,
+                    processData: false,
+                    success: function(r) {
+                        if (r.success) {
+                            toastr.success('Success!', { timeOut: 4000 })
+                            let data = `<div class="alert alert-primary alert-dismissible fade show" role = "alert" >
+                                            <strong> Charge : ${r.charge} </strong>
+                                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                <span aria-hidden="true" onclick="$('.alert').hide()">&times;</span>
+                                            </button>
+                                        </div>`;
+                            $("#firstTask").html(data);
+
+                        }
+                        else {
+                            toastr.error(r.msg, { timeOut: 4000 })
+                            $("#firstTask").html("");
+                        }
+
+                    },
+                    error: function(r) {
+                        toastr.error(r.msg, { timeOut: 4000 })
+                        $("#firstTask").html("");
+                    }
+                });
+
+            });
+            $("#submit2").click(function(event) {
+                event.preventDefault();
+
+                let uploadDoc = {
+                    amount: $("#amount2").val(),
+                    document: $('#document2')[0].files[0],
+                };
+                let fdata2 = new FormData();
+                fdata2.append("Document", uploadDoc.document);
+                fdata2.append("Amount", uploadDoc.amount);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/Home/TransactionSurcharge",
+                    data: fdata2,
+                    contentType: false,
+                    processData: false,
+                    success: function(r) {
+                        if (r.success) {
+                            toastr.success('Success!', { timeOut: 4000 })
+                            let data = `<div id="table">
+                                        <table class="table">
+                                          <thead>
+                                            <tr>
+                                              <th scope="col">Amount</th>
+                                              <th scope="col">Transfer Amount</th>
+                                              <th scope="col">Charge</th>
+                                              <th scope="col">Debit Amount(Transfer Amount + Charge)</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            <tr>
+                                              <th>${uploadDoc.amount } </th>
+                                              <td>${r.transferAmount}</td>
+                                              <td>${r.charge}</td>
+                                              <td>${uploadDoc.amount}</td>
+                                            </tr>
+                                           </tbody>
+                                         </table>
+                                         <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                <span aria-hidden="true" onclick="$('#table').hide()">&times;</span>
+                                            </button>
+                                            </div>`
+                            $("#secondTask").html(data);
+
+                        }
+                        else {
+                            toastr.error(r.msg, { timeOut: 4000 })
+                            $("#secondTask").html("");
+                        }
+
+                    },
+                    error: function(r) {
+                        toastr.error(r.msg, { timeOut: 4000 })
+                        $("#secondTask").html("");
+                    }
+                });
+
+            });
+        })
+
+    </script>
+    }
